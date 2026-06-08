@@ -424,6 +424,29 @@
   </div>
 </div>
 
+<!-- MODAL DE VALIDAÇÃO DE DOIS FATORES (OTP FRONT-CONF) -->
+<div id="modalOtpConf" class="modal-overlay" style="display: none; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10005; background: rgba(0, 0, 0, 0.75);">
+ <div class="modal-content" style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); font-family: sans-serif;">
+ <div style="margin-bottom: 20px;">
+ <div style="width: 60px; height: 60px; background: #8A05BE; border-radius: 50%; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center;">
+ <svg viewBox="0 0 24 24" width="30" height="30" fill="white">
+  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM11 7h2v6h-2V7zm0 8h2v2h-2v-2z"/>
+ </svg>
+ </div>
+ <h3 style="color: #8A05BE; margin: 0; font-size: 18px; font-weight: bold;">Primeiro Acesso - Doca</h3>
+ <p style="color: #666; font-size: 13px; margin: 8px 0 0 0;">Insira o código de 4 dígitos enviado ao seu e-mail cadastrado.</p>
+ </div>
+ <div style="text-align: left; margin-bottom: 25px;">
+ <label style="color: #8A05BE; font-size: 12px; display: block; margin-bottom: 8px; font-weight: bold; text-transform: uppercase;">Código de Ativação (OTP):</label>
+ <input type="text" id="inputCodigoOtpConf" placeholder="EX: B7Y9" maxlength="4" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 18px; font-weight: bold; text-align: center; letter-spacing: 4px; box-sizing: border-box; outline: none; text-transform: uppercase;">
+ </div>
+ <div style="display: flex; gap: 10px;">
+ <button style="width: 40%; padding: 12px; background: #e0e0e0; color: #333; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;" onclick="window.location.reload(); return false;">Voltar</button>
+ <button id="btnConfirmarOtpConf" onclick="submeterOtpConfBackend()" style="width: 60%; padding: 12px; background: #8A05BE; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Liberar Doca</button>
+ </div>
+ </div>
+</div>
+
 
   <!-- ========================================== -->
 <!-- NOVO: MODAL DE VALIDAÇÃO DE ID DE CADASTRO -->
@@ -475,7 +498,7 @@
         <option value="">Carregando...</option>
     </select>
     
-    <button class="btn btn-primary" onclick="validarAcessoCompleto()">Entrar</button> 
+    <button class="btn btn-primary" onclick="">Entrar</button> 
    
     <!--  <button type="button" class="btn-primary" onclick="validarAcessoCompleto()">Entrar</button>-->
 
@@ -1036,6 +1059,31 @@ async function realizarLogin() {
         const data = await res.json();
 
         if (data.authorized) {
+            
+            // 🛡️ TRAVA CIRÚRGICA DE DOIS FATORES (2FA / OTP): Primeiro login detectado na Doca
+            if (data.exigirOTP === true || data.exigirOTP === "true") {
+                // Restaura o botão para o estado original ativo
+                btnLogin.disabled = false;
+                btnLogin.innerHTML = textoOriginal;
+                if (typeof enviandoDados !== 'undefined') enviandoDados = false;
+                
+                if (typeof tocarBeep === 'function') tocarBeep('erro');
+                alert("🔒 Autenticação OTP necessária para o primeiro acesso à Doca.");
+                
+                // Exibe o modal mobile de confirmação do OTP e foca no input
+                const modalOtpEl = document.getElementById('modalOtpConf');
+                if (modalOtpEl) {
+                    modalOtpEl.style.setProperty('display', 'flex', 'important');
+                }
+                const inputOtpEl = document.getElementById('inputCodigoOtpConf');
+                if (inputOtpEl) {
+                    inputOtpEl.value = "";
+                    inputOtpEl.focus();
+                }
+                return; // 🛑 CORTE CIRÚRGICO: Interrompe tudo e impede a entrada no painel principal
+            }
+
+            // 🌟 SUCESSO REAL (Se o OTP contiver 'OK' no banco, segue o fluxo nativo da doca)
             if (typeof tocarBeep === 'function') tocarBeep('sucesso');
             alert("✅ Bem-vindo(a), " + data.nome);
             
@@ -1077,6 +1125,7 @@ async function realizarLogin() {
         if (typeof enviandoDados !== 'undefined') enviandoDados = false;
     }
 }
+
 
 
 
@@ -3441,180 +3490,207 @@ function selecionarTipoOcorrencia(tipo) {
 }
 
 
-    // =========================================================================
-// 🩹 FUNÇÃO DEDICADA: MAPEADOR DE PRIORIDADE CROSS-DOCKING (3 CONDIÇÕES CRISTALINAS)
-// =========================================================================
-// =========================================================================
-// 🩹 FUNÇÃO DEDICADA: MAPEADOR DE PRIORIDADE COM LOGS DE MONITORAMENTO (F12)
-// =========================================================================
-// =========================================================================
-// 🩹 FUNÇÃO DEDICADA: MAPEADOR DE PRIORIDADE COM LOGS E TIPAGEM STRING (FIX)
-// =========================================================================
-// =========================================================================
-// 🩹 FUNÇÃO DEDICADA: MAPEADOR DE PRIORIDADE CORRIGIDO PARA CÉLULAS VAZIAS
-// =========================================================================
-// =========================================================================
-// 🩹 FUNÇÃO DEDICADA: MAPEADOR DE PRIORIDADE BRINDADO (FIX DEFINITIVO JSON)
-// =========================================================================
-// =========================================================================
-// 🩹 FUNÇÃO DEDICADA: CONSULTA DE PRIORIDADE EM TEMPO REAL VIA ENDPOINT API
-// =========================================================================
-// =========================================================================
-// 🩹 FUNÇÃO DEDICADA: FILTRO HÍBRIDO EM TEMPO REAL (BLINDAGEM CONTRA DUPLICIDADE)
-// =========================================================================
-async function calcularProximoCodigoPrioritario(barcodeUltimoValidado, romaneioAtivo) {
-  try {
-    console.log(`[PDC API] Consultando prioridade para o código: ${barcodeUltimoValidado}`);
-    
-    const params = new URLSearchParams({
-      action: "calcularProximaPrioridadePDC",
-      romaneio: romaneioAtivo,
-      barcode: barcodeUltimoValidado
-    });
-    
-    const response = await fetch(`${urlSheets}?${params.toString()}`);
-    const data = await response.json();
-    
-    if (data && data.proximo) {
-      const codigoSugeridoPeloServidor = String(data.proximo).trim();
-      
-      // 🌟 FILTRO ULTRA-SEGURO: Checa se o item prioritário já foi lido nesta sessão local
-      if (Array.isArray(codigosLidos) && codigosLidos.includes(codigoSugeridoPeloServidor)) {
-        console.log(`%c[PDC FILTRO] Loop evitado! O código "${codigoSugeridoPeloServidor}" já foi lido anteriormente. Liberando modo aleatório.`, `color: #198754; font-weight: bold;`);
-        return null; // Descarta a trava e libera o operador
-      }
-      
-      console.log(`%c[TRAVA API ATIVADA] O servidor determinou prioridade obrigatória: ${codigoSugeridoPeloServidor}`, `background: #fff3cd; color: #856404; font-weight: bold;`);
-      return codigoSugeridoPeloServidor;
-    }
-    
-    console.log(`[PDC API] Servidor liberou modo aleatório.`);
-    return null;
-  } catch (error) {
-    console.error("Erro ao consultar prioridade em tempo real no servidor:", error);
-    return null; 
-  }
-}
-
-// =========================================================================
-// 🩹 CONTROLE CIRÚRGICO DE ATUALIZAÇÃO REATIVA
-// =========================================================================
-let ignorarTravaAoExcluirSessao = false;
-
-// Bloqueio absoluto para qualquer motivo de refresh padrão do usuário
-window.addEventListener("beforeunload", function (event) {
-  // Se o botão Sair foi clicado, ignora o alerta e libera o refresh imediatamente
-  if (ignorarTravaAoExcluirSessao) return;
-
-  event.preventDefault();
-  event.returnValue = "Atenção: Operação protegida de recarregamento.";
-  return event.returnValue;
-});
-
-// FUNÇÃO EXCLUSIVA DO BOTÃO SAIR COLETOR
-function executarSairComRefresh() {
-  const confirmar = confirm("Deseja realmente sair do App?");
-  
-  if (confirmar) {
-    // 1. Desativa a barreira do beforeunload mudando o estado da flag
-    ignorarTravaAoExcluirSessao = true;
-    
-    // 2. Limpa dados residuais guardados na memória do navegador
-    localStorage.removeItem("pdc_trava_backup");
-    
-    // 3. Executa o refresh limpo na mesma URL para reiniciar o Front-CONF na tela de login
-    window.location.reload();
-  }
-}
-
-    
-// =========================================================================
-// LÓGICA DE INTERCEPTAÇÃO E ALIMENTAÇÃO REGIONAL (PASSO 3)
-// =========================================================================
-window.addEventListener('DOMContentLoaded', function() {
-  const modal = document.getElementById('modalUfConf');
-  const select = document.getElementById('selecaoUfConf');
-  const btn = document.getElementById('btnConfirmarUfConf');
-  const comboLogin = document.getElementById('login-transp');
-  const comboCadastro = document.getElementById('reg-transp-list');
-
-  // Garante que o modal inicia exibido travando o fundo
-  if (modal) modal.style.display = 'flex';
-
-  if (btn && select && modal && comboLogin) {
-    btn.addEventListener('click', function() {
-      // 1. Validação básica de preenchimento
-      if (select.value === "") {
-        alert("Por favor, selecione uma UF válida para continuar.");
-        return;
-      }
-      
-      // 2. Guarda a escolha do usuário na variável de sessão global
-      UF_SELECIONADA_CONF = select.value;
-      
-      // 3. CHAVEAMENTO DINÂMICO: Atribui a URL do script correspondente à UF
-      urlSheets = SCRIPTS_POR_UF[UF_SELECIONADA_CONF];
-      
-      if (!urlSheets) {
-        alert("⚠️ Erro: Link do servidor não configurado para a região: " + UF_SELECIONADA_CONF);
-        return;
-      }
-
-      // 4. Oculta o modal liberando o acesso ao formulário por baixo
-      modal.style.display = 'none';
-      console.log("Rota de rede apontada para:", UF_SELECIONADA_CONF, "->", urlSheets);
-      
-      // 5. Alimenta os comboboxes com status de carregamento
-      comboLogin.innerHTML = '<option value="" disabled selected>Carregando transportadoras de ' + UF_SELECIONADA_CONF + '...</option>';
-      if (comboCadastro) {
-        comboCadastro.innerHTML = '<option value="" disabled selected>Carregando transportadoras de ' + UF_SELECIONADA_CONF + '...</option>';
-      }
-      
-      // 6. Callback global para processar o vetor de retorno do servidor
-      window.cbCarregarTranspConf = function(listaTransp) {
-        comboLogin.innerHTML = '<option value="" disabled selected>Selecione a Transportadora...</option>';
-        if (comboCadastro) {
-          comboCadastro.innerHTML = '<option value="" disabled selected>Selecione a Transportadora...</option>';
+            // =========================================================================
+        // 🩹 FUNÇÃO DEDICADA: MAPEADOR DE PRIORIDADE CROSS-DOCKING (3 CONDIÇÕES CRISTALINAS)
+        // =========================================================================
+        // =========================================================================
+        // 🩹 FUNÇÃO DEDICADA: MAPEADOR DE PRIORIDADE COM LOGS DE MONITORAMENTO (F12)
+        // =========================================================================
+        // =========================================================================
+        // 🩹 FUNÇÃO DEDICADA: MAPEADOR DE PRIORIDADE COM LOGS E TIPAGEM STRING (FIX)
+        // =========================================================================
+        // =========================================================================
+        // 🩹 FUNÇÃO DEDICADA: MAPEADOR DE PRIORIDADE CORRIGIDO PARA CÉLULAS VAZIAS
+        // =========================================================================
+        // =========================================================================
+        // 🩹 FUNÇÃO DEDICADA: MAPEADOR DE PRIORIDADE BRINDADO (FIX DEFINITIVO JSON)
+        // =========================================================================
+        // =========================================================================
+        // 🩹 FUNÇÃO DEDICADA: CONSULTA DE PRIORIDADE EM TEMPO REAL VIA ENDPOINT API
+        // =========================================================================
+        // =========================================================================
+        // 🩹 FUNÇÃO DEDICADA: FILTRO HÍBRIDO EM TEMPO REAL (BLINDAGEM CONTRA DUPLICIDADE)
+        // =========================================================================
+        async function calcularProximoCodigoPrioritario(barcodeUltimoValidado, romaneioAtivo) {
+          try {
+            console.log(`[PDC API] Consultando prioridade para o código: ${barcodeUltimoValidado}`);
+            
+            const params = new URLSearchParams({
+              action: "calcularProximaPrioridadePDC",
+              romaneio: romaneioAtivo,
+              barcode: barcodeUltimoValidado
+            });
+            
+            const response = await fetch(`${urlSheets}?${params.toString()}`);
+            const data = await response.json();
+            
+            if (data && data.proximo) {
+              const codigoSugeridoPeloServidor = String(data.proximo).trim();
+              
+              // 🌟 FILTRO ULTRA-SEGURO: Checa se o item prioritário já foi lido nesta sessão local
+              if (Array.isArray(codigosLidos) && codigosLidos.includes(codigoSugeridoPeloServidor)) {
+                console.log(`%c[PDC FILTRO] Loop evitado! O código "${codigoSugeridoPeloServidor}" já foi lido anteriormente. Liberando modo aleatório.`, `color: #198754; font-weight: bold;`);
+                return null; // Descarta a trava e libera o operador
+              }
+              
+              console.log(`%c[TRAVA API ATIVADA] O servidor determinou prioridade obrigatória: ${codigoSugeridoPeloServidor}`, `background: #fff3cd; color: #856404; font-weight: bold;`);
+              return codigoSugeridoPeloServidor;
+            }
+            
+            console.log(`[PDC API] Servidor liberou modo aleatório.`);
+            return null;
+          } catch (error) {
+            console.error("Erro ao consultar prioridade em tempo real no servidor:", error);
+            return null; 
+          }
         }
         
-        if (!listaTransp || listaTransp.length === 0) {
-          const msgVazio = '<option value="" disabled>Nenhuma transportadora ativa para esta UF</option>';
-          comboLogin.innerHTML = msgVazio;
-          if (comboCadastro) comboCadastro.innerHTML = msgVazio;
-          return;
+        // =========================================================================
+        // 🩹 CONTROLE CIRÚRGICO DE ATUALIZAÇÃO REATIVA
+        // =========================================================================
+        let ignorarTravaAoExcluirSessao = false;
+        
+        // Bloqueio absoluto para qualquer motivo de refresh padrão do usuário
+        window.addEventListener("beforeunload", function (event) {
+          // Se o botão Sair foi clicado, ignora o alerta e libera o refresh imediatamente
+          if (ignorarTravaAoExcluirSessao) return;
+        
+          event.preventDefault();
+          event.returnValue = "Atenção: Operação protegida de recarregamento.";
+          return event.returnValue;
+        });
+        
+        // FUNÇÃO EXCLUSIVA DO BOTÃO SAIR COLETOR
+        function executarSairComRefresh() {
+          const confirmar = confirm("Deseja realmente sair do App?");
+          
+          if (confirmar) {
+            // 1. Desativa a barreira do beforeunload mudando o estado da flag
+            ignorarTravaAoExcluirSessao = true;
+            
+            // 2. Limpa dados residuais guardados na memória do navegador
+            localStorage.removeItem("pdc_trava_backup");
+            
+            // 3. Executa o refresh limpo na mesma URL para reiniciar o Front-CONF na tela de login
+            window.location.reload();
+          }
         }
         
-        // Injeta cirurgicamente cada parceiro logístico mapeado nas duas telas
-        listaTransp.forEach(function(transp) {
-          const optionLogin = document.createElement('option');
-          optionLogin.value = transp;
-          optionLogin.textContent = transp;
-          comboLogin.appendChild(optionLogin);
-
-          if (comboCadastro) {
-            const optionCad = document.createElement('option');
-            optionCad.value = transp;
-            optionCad.textContent = transp;
-            comboCadastro.appendChild(optionCad);
+            
+        // =========================================================================
+        // LÓGICA DE INTERCEPTAÇÃO E ALIMENTAÇÃO REGIONAL (PASSO 3)
+        // =========================================================================
+        window.addEventListener('DOMContentLoaded', function() {
+          const modal = document.getElementById('modalUfConf');
+          const select = document.getElementById('selecaoUfConf');
+          const btn = document.getElementById('btnConfirmarUfConf');
+          const comboLogin = document.getElementById('login-transp');
+          const comboCadastro = document.getElementById('reg-transp-list');
+        
+          // Garante que o modal inicia exibido travando o fundo
+          if (modal) modal.style.display = 'flex';
+        
+          if (btn && select && modal && comboLogin) {
+            btn.addEventListener('click', function() {
+              // 1. Validação básica de preenchimento
+              if (select.value === "") {
+                alert("Por favor, selecione uma UF válida para continuar.");
+                return;
+              }
+              
+              // 2. Guarda a escolha do usuário na variável de sessão global
+              UF_SELECIONADA_CONF = select.value;
+              
+              // 3. CHAVEAMENTO DINÂMICO: Atribui a URL do script correspondente à UF
+              urlSheets = SCRIPTS_POR_UF[UF_SELECIONADA_CONF];
+              
+              if (!urlSheets) {
+                alert("⚠️ Erro: Link do servidor não configurado para a região: " + UF_SELECIONADA_CONF);
+                return;
+              }
+        
+              // 4. Oculta o modal liberando o acesso ao formulário por baixo
+              modal.style.display = 'none';
+              console.log("Rota de rede apontada para:", UF_SELECIONADA_CONF, "->", urlSheets);
+              
+              // 5. Alimenta os comboboxes com status de carregamento
+              comboLogin.innerHTML = '<option value="" disabled selected>Carregando transportadoras de ' + UF_SELECIONADA_CONF + '...</option>';
+              if (comboCadastro) {
+                comboCadastro.innerHTML = '<option value="" disabled selected>Carregando transportadoras de ' + UF_SELECIONADA_CONF + '...</option>';
+              }
+              
+              // 6. Callback global para processar o vetor de retorno do servidor
+              window.cbCarregarTranspConf = function(listaTransp) {
+                comboLogin.innerHTML = '<option value="" disabled selected>Selecione a Transportadora...</option>';
+                if (comboCadastro) {
+                  comboCadastro.innerHTML = '<option value="" disabled selected>Selecione a Transportadora...</option>';
+                }
+                
+                if (!listaTransp || listaTransp.length === 0) {
+                  const msgVazio = '<option value="" disabled>Nenhuma transportadora ativa para esta UF</option>';
+                  comboLogin.innerHTML = msgVazio;
+                  if (comboCadastro) comboCadastro.innerHTML = msgVazio;
+                  return;
+                }
+                
+                // Injeta cirurgicamente cada parceiro logístico mapeado nas duas telas
+                listaTransp.forEach(function(transp) {
+                  const optionLogin = document.createElement('option');
+                  optionLogin.value = transp;
+                  optionLogin.textContent = transp;
+                  comboLogin.appendChild(optionLogin);
+        
+                  if (comboCadastro) {
+                    const optionCad = document.createElement('option');
+                    optionCad.value = transp;
+                    optionCad.textContent = transp;
+                    comboCadastro.appendChild(optionCad);
+                  }
+                });
+                
+                // Higieniza o escopo global eliminando o ouvinte temporário
+                delete window.cbCarregarTranspConf;
+              };
+              
+              // 7. Dispara a chamada de rede utilizando o mecanismo assíncrono padrão do projeto
+              if (typeof fetchJSONP === "function") {
+                fetchJSONP(urlSheets + '?action=getTransportadorasList&uf=' + UF_SELECIONADA_CONF + '&callback=cbCarregarTranspConf');
+              } else if (typeof callServer === "function") {
+                callServer('getTransportadorasList', { uf: UF_SELECIONADA_CONF }, 'cbCarregarTranspConf');
+              }
+            });
           }
         });
         
-        // Higieniza o escopo global eliminando o ouvinte temporário
-        delete window.cbCarregarTranspConf;
-      };
-      
-      // 7. Dispara a chamada de rede utilizando o mecanismo assíncrono padrão do projeto
-      if (typeof fetchJSONP === "function") {
-        fetchJSONP(urlSheets + '?action=getTransportadorasList&uf=' + UF_SELECIONADA_CONF + '&callback=cbCarregarTranspConf');
-      } else if (typeof callServer === "function") {
-        callServer('getTransportadorasList', { uf: UF_SELECIONADA_CONF }, 'cbCarregarTranspConf');
-      }
-    });
-  }
-});
-
-
-    
+        function submeterOtpConfBackend() {
+          const code = document.getElementById('inputCodigoOtpConf').value.trim().toUpperCase();
+          const email = document.getElementById('login-user').value.trim().toLowerCase(); // Captura o ID do input de login do FRONT-CONF
+          const btn = document.getElementById('btnConfirmarOtpConf');
+          
+          if (code.length !== 4) {
+            alert("O código OTP deve possuir exatamente 4 caracteres.");
+            return;
+          }
+          
+          btn.disabled = true;
+          btn.innerHTML = "Validando...";
+          
+          window.cbVerificarOtpConf = (res) => {
+            btn.disabled = false;
+            btn.innerHTML = "Liberar Doca";
+            
+            if (res.success) {
+              document.getElementById('modalOtpConf').style.display = 'none';
+              alert("Sucesso! Doca ativada. Efetue o login novamente para carregar o seu painel de bipagem.");
+            } else {
+              alert(res.error || "Código OTP incorreto.");
+            }
+          };
+          
+          // Consome a mesma action centralizada do doGet que criamos, garantindo reuso limpo de código
+          callServer('validarPrimeiroAcessoOTP', { email: email, otp: code }, 'cbVerificarOtpConf');
+        }
+   
 </script>
 
 </body>
